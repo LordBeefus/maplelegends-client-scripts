@@ -43,14 +43,15 @@ else
     echo "Success"
 
     echo "Set default 800x600 resolution"
-    WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit ./dll_files/non-windowed.reg
+    WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit ./dll_files/windowed.reg
     WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit $dir_dll_files/window-settings.reg
 
-    echo "Success"
+    sleep 1
 
 fi
-echo "Disabling Virtual Desktop"
-WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit ./dll_files/non-windowed.reg
+echo "Enabling Virtual Desktop"
+WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit ./dll_files/windowed.reg
+
 echo "Starting MapleLegends"
 cd "$dir_ml"
 WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage ./MapleLegends.exe
