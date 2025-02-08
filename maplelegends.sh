@@ -1,7 +1,8 @@
 #!/bin/bash
-dir_script=$(dirname $(realpath $0))
-dir_ml=$dir_script/MapleLegends
-dir_dll_files=$dir_script/dll_files
+dir_client=$(dirname $(realpath $0))
+dir_scripts=$dir_client/scripts
+dir_ml=$dir_client/MapleLegends
+dir_dll_files=$dir_client/dll_files
 dir_prefix_system32=$HOME/maplelegends_prefix/drive_c/windows/system32
 
 echo $dir_prefix_system32
@@ -9,48 +10,14 @@ if [[ -d "$dir_prefix_system32" ]]; then
     echo "maplelegends_prefix found"
     
 else
-
     echo "maplelegends_prefix not found"
-
-    echo "Creating maplelegends_prefix in $HOME/maplelegends_prefix"
-    cd $dir_ml
-    echo $(pwd)
-    WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage wineboot
-    echo "Success"
-
-    echo "Updating ws2_32.dll and ws2help.dll "
-    cd $dir_script
-    cp "$dir_dll_files/ws2_32.dll" "$dir_prefix_system32/ws2_32.dll"
-    cp "$dir_dll_files/ws2help.dll" "$dir_prefix_system32/ws2help.dll"
-    echo "Success"
-
-    # echo "Copying dxvk-1.10.3 dlls"
-    # cp "$dir_dll_files/dxvk-1.10.3/x32/d3d9.dll" "$dir_prefix_system32/d3d9.dll"
-    # cp "$dir_dll_files/dxvk-1.10.3/x32/d3d10.dll" "$dir_prefix_system32/d3d10.dll"
-    # cp "$dir_dll_files/dxvk-1.10.3/x32/d3d10_1.dll" "$dir_prefix_system32/d3d10_1.dll"
-    # cp "$dir_dll_files/dxvk-1.10.3/x32/d3d10core.dll" "$dir_prefix_system32/d3d10core.dll"
-    # cp "$dir_dll_files/dxvk-1.10.3/x32/d3d11.dll" "$dir_prefix_system32/d3d9.dll"
-    # cp "$dir_dll_files/dxvk-1.10.3/x32/dxgi.dll" "$dir_prefix_system32/d3d11.dll"
-    # echo "Success"
-
-    # applying overwrite breaks the runtime, unsure why
-    # echo "Overwrite DLLs for dxvk-1.10.3"
-    # WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit $dir_dll_files/dxvk-1.10.3.reg
-    # echo "Success"
-
-    echo "Setting to Windows 98"
-    WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit $dir_dll_files/win98.reg
-    echo "Success"
-
-    echo "Set default 800x600 resolution"
-    WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit ./dll_files/non-windowed.reg
-    WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit $dir_dll_files/window-settings.reg
-
-    echo "Success"
+    
+    # Launch prefix_setup script
+    $dir_scripts/prefix_setup.sh
 
 fi
 echo "Disabling Virtual Desktop"
-WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage regedit ./dll_files/non-windowed.reg
+WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_client/wine.AppImage regedit ./dll_files/non-windowed.reg
 echo "Starting MapleLegends"
 cd "$dir_ml"
-WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_script/wine.AppImage ./MapleLegends.exe
+WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_client/wine.AppImage ./MapleLegends.exe
