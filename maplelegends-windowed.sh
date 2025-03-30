@@ -21,7 +21,19 @@ echo "Enabling Virtual Desktop"
 echo "Starting MapleLegends"
 cd "$dir_ml"
 
+# Get Window Size
+legends_ini=$(<$dir_ml/Legends.ini)
+HDClient=800x600
+
+if [[ "$legends_ini" == *"HDClient = 1"* ]]; then
+    HDClient=1024x768
+elif [[ "$legends_ini" == *"HDClient = 2"* ]]; then
+    HDClient=1366x768
+fi
+
+echo "HDClient: $HDClient"
+
 # Generate unique string
 random_string=$(openssl rand -base64 6)
 
-WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_client/wine.AppImage explorer /desktop=Desktop-#$random_string,800x600 maplelegends.exe
+WINEPREFIX="$HOME/maplelegends_prefix" WINEARCH=win32 $dir_client/wine.AppImage explorer /desktop=Desktop-#$random_string,$HDClient maplelegends.exe
