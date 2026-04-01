@@ -4,10 +4,10 @@ To set it up follow steps below:
 - Clone this repo locally
   - Note: ./ is used to represent the repo's base folder
 - Setup wine appimage
-  - Download a wine appimage that supports 32 bit prefix'
-    - Example used here is wine-stable_8.0.2-x86_64.AppImage, but you can use any modern version
-    - Link: https://github.com/mmtrt/WINE_AppImage/releases/tag/stable-v8
-    - Place wine-stable_8.0.2-x86_64.AppImage in ./ and rename it to wine.AppImage
+  - run ./update_wine.sh
+  - confirm wine.AppImage is in ./
+  - If for whatever reason the script does not pull the latest app image you can find it here: https://github.com/mmtrt/WINE_AppImage/releases/tag/test7
+  Just make sure you get a version thats based on wine11. At the time of writing the latest is wine-staging_11.1-x86_64.AppImage 
 - Setup MapleLegends
   - Download Crossover version of MapleLegends (MAC):
     - Link: https://forum.maplelegends.com/index.php?threads/new-macos-installation-guide-faq.38764/
@@ -18,6 +18,7 @@ To set it up follow steps below:
 - Enable executable permissions for these 3 files:
   - ./maplelegends.sh
   - ./ml_winecfg.sh
+  - ./update_wine.sh
   - ./wine.AppImage
 - Run maplelegends by running ./maplelegends.sh on terminal
 - If ./maplelegends.sh doesnt work, run ./maplelegends-windowed.sh
