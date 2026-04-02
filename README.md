@@ -14,7 +14,7 @@ HDClient 2 is not currently supported and is not the objective right now. The ob
 - Right click `maplelegends.sh` and click add to steam.
 - Launch from steam Gaming mode.
 
-This should do all of the following: Download the wine11 based AppImage, download and unpack the MapleLegends version listed in the config script, create the wine prefix, and finally run maple legends.
+This should do all of the following: Download the wine11 based AppImage, download and unpack the MapleLegends version listed in the config script, create the wine prefix, and finally run maple legends. It will only download wine and ML files if it doesn't find them. If they already exist it will not try and download them again.
 
 The script will try to automatically detect if the steamdeck is in desktop mode vs gaming mode and launch ML in windowed vs fullscreen mode.
 
@@ -24,6 +24,7 @@ If when you launch the game in Gaming mode and you find that you have no mouse c
 
 ### Troubleshooting
 - Make sure you are dealing with a clean install if you run into issues. I have provided a helper script `clean.sh` that you can run to remove the wine.AppImage, MapleLegends files, and wine prefix.
+- If you find the script fails at the setup section for ML, this could be due to getting rate limited by the downloads. There is nothing I can do about this, you simply have to wait it out or get the files from somewhere else and place them in the `./` directory of the project and try running again.
 - If you still run into issues edit the `config.sh` and set the debug value to true. This will create log files in the `logs/` directory on the next run and we can use that to troubleshoot.
 
 Some things to note:
