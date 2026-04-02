@@ -1,9 +1,37 @@
 #!/bin/bash
 set -eo pipefail
-FILE_ID="112hrk8whGO_nuy49aJbr8tJcgkqnjmxy"
-DOWNLOAD_URL="https://drive.usercontent.google.com/download?id=${FILE_ID}&export=download&confirm=t"
+
 dir_client="$(cd "$(dirname "$0")" && pwd)"
+
+# Source configuration
+source "$dir_client/config.sh"
+
+DOWNLOAD_URL="$ML_DOWNLOAD_URL"
 COOKIE_FILE="/tmp/gdrive_$$_cookies.txt"
+
+dir_logs="$dir_client/logs"
+mkdir -p "$dir_logs"
+if [[ -n "${ML_LOG_FILE:-}" ]]; then
+    log_file="$ML_LOG_FILE"
+else
+    log_file="$dir_logs/setup_ml-$(date +%Y%m%d_%H%M%S).log"
+    export ML_LOG_FILE="$log_file"
+fi
+
+if [[ "$DEBUG" == "true" && "${ML_LOG_REDIRECTED:-0}" != "1" ]]; then
+    export ML_LOG_REDIRECTED=1
+    exec > >(tee -a "$log_file") 2>&1
+fi
+
+debug() {
+    if [[ "$DEBUG" == "true" ]]; then
+        printf '[DEBUG] [%s] [%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$(basename "$0")" "$1"
+    fi
+}
+
+debug "Starting setup script"
+debug "Download URL configured"
+debug "log_file=$log_file"
 
 cleanup() { rm -f "$COOKIE_FILE"; }
 trap cleanup EXIT
@@ -13,9 +41,11 @@ echo "Fetching file info from Google Drive..."
 # HEAD request to resolve filename from Content-Disposition and prime cookies
 filename=$(curl -fsSL \
     -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
-    --head "$DOWNLOAD_URL" | \
+    --head "$ML_DOWNLOAD_URL" | \
     grep -i 'content-disposition' | \
     grep -oP 'filename="?\K[^";\r\n]+' | head -1)
+
+debug "Resolved filename: ${filename:-<empty>}"
 
 if [[ -z "$filename" ]]; then
     echo "Error: Could not determine filename from Google Drive response."
@@ -27,6 +57,7 @@ fi
 DEST="$dir_client/$filename"
 
 if [[ -f "$DEST" ]]; then
+    debug "Destination already exists: $DEST"
     echo "File already exists: $DEST"
     exit 0
 fi
@@ -35,11 +66,13 @@ echo "Downloading to $DEST..."
 if ! curl -fSL --progress-bar \
     -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
     -o "$DEST" \
-    "$DOWNLOAD_URL"; then
+    "$ML_DOWNLOAD_URL"; then
     echo "Error: Failed to download from Google Drive."
     echo "Cause may be temporary network issues or Google Drive rate limits/quota."
     exit 1
 fi
+
+debug "Download complete: $DEST"
 
 # Google Drive may return an HTML error page with HTTP 200 when quota is exceeded.
 if grep -qiE "quota exceeded|too many users have viewed or downloaded|download quota" "$DEST"; then
@@ -56,6 +89,7 @@ TMP_DIR="$dir_client/tmp"
 mkdir -p "$TMP_DIR"
 
 echo "Extracting $filename to $TMP_DIR..."
+debug "Beginning extraction"
 case "$filename" in
     *.tar.gz|*.tgz)   tar -xzf "$DEST" -C "$TMP_DIR" ;;
     *.tar.bz2|*.tbz2) tar -xjf "$DEST" -C "$TMP_DIR" ;;
@@ -66,6 +100,7 @@ case "$filename" in
     *.7z)              7z x      "$DEST" -o"$TMP_DIR" ;;
     *.rar)             unrar x   "$DEST"  "$TMP_DIR/" ;;
     *)
+        debug "Unsupported archive extension: $filename"
         echo "Warning: Unknown archive type for '$filename', skipping extraction."
         exit 1
         ;;
@@ -78,6 +113,7 @@ version_name="${filename%.cxarchive}"
 ML_SRC="$TMP_DIR/$version_name/drive_c/MapleLegends"
 
 if [[ ! -d "$ML_SRC" ]]; then
+    debug "Expected source directory not found: $ML_SRC"
     echo "Error: Expected folder not found: $ML_SRC"
     exit 1
 fi
@@ -85,6 +121,7 @@ fi
 ML_DEST="$dir_client/MapleLegends"
 
 if [[ -d "$ML_DEST" ]]; then
+    debug "Destination already exists and may be overwritten: $ML_DEST"
     echo "MapleLegends already exists at $ML_DEST"
     read -rp "Overwrite? [y/N] " confirm
     [[ "$confirm" != [yY] ]] && echo "Skipped move." && exit 0
@@ -96,6 +133,7 @@ echo "Moved MapleLegends to: $ML_DEST"
 
 # Cleanup
 echo "Cleaning up..."
+debug "Removing downloaded archive and temp directory"
 rm -f "$DEST"
 rm -rf "$TMP_DIR"
 echo "Cleanup complete."

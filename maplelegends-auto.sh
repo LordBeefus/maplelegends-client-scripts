@@ -1,32 +1,38 @@
 #!/bin/bash
 set -eo pipefail
-DEBUG=false
 
 dir_client="$(cd "$(dirname "$0")" && pwd)"
+
+# Source configuration
+source "$dir_client/config.sh"
 dir_scripts=$dir_client/scripts
 dir_ml=$dir_client/MapleLegends
-dir_prefix=$HOME/maplelegends_prefix
-dir_prefix_system32=$HOME/maplelegends_prefix/drive_c/windows/system32
+dir_prefix=$WINE_PREFIX_DIR
+dir_prefix_system32=$dir_prefix/drive_c/windows/system32
 dir_logs=$dir_client/logs
 
 mkdir -p "$dir_logs"
-log_file="$dir_logs/maplelegends-auto-$(date +%Y%m%d_%H%M%S).log"
+if [[ -n "${ML_LOG_FILE:-}" ]]; then
+    log_file="$ML_LOG_FILE"
+else
+    log_file="$dir_logs/maplelegends-auto-$(date +%Y%m%d_%H%M%S).log"
+    export ML_LOG_FILE="$log_file"
+fi
+
+if [[ "$DEBUG" == "true" && "${ML_LOG_REDIRECTED:-0}" != "1" ]]; then
+    export ML_LOG_REDIRECTED=1
+    exec > >(tee -a "$log_file") 2>&1
+fi
 
 log() {
-    if $DEBUG; then
-        printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" | tee -a "$log_file"
+    if [[ "$DEBUG" == "true" ]]; then
+        printf '[%s] [%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$(basename "$0")" "$1"
     fi
 }
 
 log "Script start"
+log "log_file=$log_file"
 log "XDG_SESSION_TYPE=${XDG_SESSION_TYPE:-<unset>}"
-log "Environment dump start"
-if $DEBUG; then
-    env | sort | while IFS= read -r env_line; do
-        log "ENV $env_line"
-    done
-fi
-log "Environment dump end"
 
 echo "dir_prefix_system32: $dir_prefix_system32"
 if [[ -d "$dir_prefix_system32" ]]; then
@@ -42,7 +48,7 @@ else
     echo "End: Creating maplelegends_prefix in $HOME/maplelegends_prefix"
 
     echo "Start: Setting to Windows 98"
-    WINEPREFIX="$HOME/maplelegends_prefix" "$dir_client/wine.AppImage" winecfg -v win98
+    WINEPREFIX="$WINE_PREFIX_DIR" "$dir_client/wine.AppImage" winecfg -v win98
     echo "End: Setting to Windows 98"
 
 fi
