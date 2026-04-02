@@ -42,9 +42,13 @@ jobs:
         with:
           files: ${{ env.ARCHIVE_NAME }}
 
+      - name: Extract archive for artifact upload
+        if: github.event_name != 'release'
+        run: unzip "${{ env.ARCHIVE_NAME }}" -d artifact_staging
+
       - name: Upload zip as workflow artifact
         if: github.event_name != 'release'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARCHIVE_NAME }}
-          path: ${{ env.ARCHIVE_NAME }}
+          path: artifact_staging/
