@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 GITHUB_REPO="mmtrt/WINE_AppImage"
 dir_client="$(cd "$(dirname "$0")" && pwd)"
 DEST="$dir_client/wine.AppImage"

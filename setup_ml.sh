@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 FILE_ID="112hrk8whGO_nuy49aJbr8tJcgkqnjmxy"
 DOWNLOAD_URL="https://drive.usercontent.google.com/download?id=${FILE_ID}&export=download&confirm=t"
 dir_client="$(cd "$(dirname "$0")" && pwd)"
@@ -17,8 +18,8 @@ filename=$(curl -fsSL \
     grep -oP 'filename="?\K[^";\r\n]+' | head -1)
 
 if [[ -z "$filename" ]]; then
-    filename="gdrive_${FILE_ID}.archive"
-    echo "Warning: Could not determine filename, using: $filename"
+    echo "Error: Could not determine filename from Google Drive response."
+    exit 1
 else
     echo "Filename: $filename"
 fi
@@ -27,15 +28,26 @@ DEST="$dir_client/$filename"
 
 if [[ -f "$DEST" ]]; then
     echo "File already exists: $DEST"
-    read -rp "Re-download and overwrite? [y/N] " confirm
-    [[ "$confirm" != [yY] ]] && echo "Skipped." && exit 0
+    exit 0
 fi
 
 echo "Downloading to $DEST..."
-curl -fSL --progress-bar \
+if ! curl -fSL --progress-bar \
     -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
     -o "$DEST" \
-    "$DOWNLOAD_URL"
+    "$DOWNLOAD_URL"; then
+    echo "Error: Failed to download from Google Drive."
+    echo "Cause may be temporary network issues or Google Drive rate limits/quota."
+    exit 1
+fi
+
+# Google Drive may return an HTML error page with HTTP 200 when quota is exceeded.
+if grep -qiE "quota exceeded|too many users have viewed or downloaded|download quota" "$DEST"; then
+    echo "Error: Google Drive download quota/rate limit reached for this file."
+    echo "Please wait and try again later."
+    rm -f "$DEST"
+    exit 1
+fi
 
 echo "Done: $DEST"
 
@@ -55,7 +67,7 @@ case "$filename" in
     *.rar)             unrar x   "$DEST"  "$TMP_DIR/" ;;
     *)
         echo "Warning: Unknown archive type for '$filename', skipping extraction."
-        exit 0
+        exit 1
         ;;
 esac
 
