@@ -1,0 +1,57 @@
+name: Release Zip
+
+on:
+  release:
+    types: [published]
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-attach-zip:
+    if: github.event_name != 'pull_request' || (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build zip from repository snapshot
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          REF_LABEL="$TAG_NAME"
+          if [[ -z "$REF_LABEL" || "$REF_LABEL" == "merge" ]]; then
+            REF_LABEL="${GITHUB_SHA::7}"
+          fi
+          REF_LABEL="${REF_LABEL//\//-}"
+
+          ARCHIVE_BASENAME="${REPO_NAME}-${REF_LABEL}"
+          ARCHIVE_NAME="${ARCHIVE_BASENAME}.zip"
+          ARCHIVE_ROOT="${ARCHIVE_BASENAME}/"
+
+          # git archive packages the tracked repository snapshot.
+          # Ignored/untracked files are excluded by design.
+          # --prefix puts all files under a single top-level folder in the zip.
+          git archive --format=zip --prefix "$ARCHIVE_ROOT" --output "$ARCHIVE_NAME" HEAD
+
+          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> "$GITHUB_ENV"
+
+      - name: Upload zip to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ARCHIVE_NAME }}
+
+      - name: Upload zip as workflow artifact
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE_NAME }}
+          path: ${{ env.ARCHIVE_NAME }}
