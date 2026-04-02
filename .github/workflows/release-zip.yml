@@ -22,17 +22,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build zip from repository snapshot
-        env:
-          TAG_NAME: ${{ github.event.release.tag_name || github.ref_name }}
         run: |
-          REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          REF_LABEL="$TAG_NAME"
-          if [[ -z "$REF_LABEL" || "$REF_LABEL" == "merge" ]]; then
-            REF_LABEL="${GITHUB_SHA::7}"
-          fi
-          REF_LABEL="${REF_LABEL//\//-}"
+          BUILD_DATE="$(date -u '+%Y%m%d')"
 
-          ARCHIVE_BASENAME="${REPO_NAME}-${REF_LABEL}"
+          ARCHIVE_BASENAME="ML-Unofficial-SteamDeck-${BUILD_DATE}"
           ARCHIVE_NAME="${ARCHIVE_BASENAME}.zip"
           ARCHIVE_ROOT="${ARCHIVE_BASENAME}/"
 
